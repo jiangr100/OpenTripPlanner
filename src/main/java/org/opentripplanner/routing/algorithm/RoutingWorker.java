@@ -61,6 +61,7 @@ public class RoutingWorker {
         var itineraries = Collections.synchronizedList(new ArrayList<Itinerary>());
         var routingErrors = Collections.synchronizedSet(new HashSet<RoutingError>());
 
+        System.out.println("im here");
         if (OTPFeature.ParallelRouting.isOn()) {
             CompletableFuture.allOf(
                     CompletableFuture.runAsync(() -> routeDirectStreet(itineraries, routingErrors)),
@@ -70,6 +71,7 @@ public class RoutingWorker {
         } else {
             // Direct street routing
             routeDirectStreet(itineraries, routingErrors);
+            System.out.println(itineraries);
 
             // Direct flex routing
             routeDirectFlex(itineraries, routingErrors);

@@ -22,6 +22,7 @@ import org.opentripplanner.api.resource.PlannerResource;
 import org.opentripplanner.api.resource.Routers;
 import org.opentripplanner.api.resource.ServerInfo;
 import org.opentripplanner.api.resource.UpdaterStatusResource;
+import org.opentripplanner.custom_api.GraphVertexExists;
 import org.opentripplanner.ext.examples.statistics.api.resource.GraphStatisticsResource;
 import org.opentripplanner.ext.legacygraphqlapi.LegacyGraphQLAPI;
 import org.opentripplanner.ext.parkAndRideApi.ParkAndRideResource;
@@ -31,6 +32,8 @@ import org.opentripplanner.ext.transmodelapi.TransmodelAPI;
 import org.opentripplanner.ext.vectortiles.VectorTilesResource;
 import org.opentripplanner.index.IndexAPI;
 import org.opentripplanner.util.OTPFeature;
+
+import org.opentripplanner.custom_api.*;
 
 /**
  * Configure API resource endpoints.
@@ -44,6 +47,9 @@ public class APIEndpoints {
         add(Routers.class);
         add(PlannerResource.class);
         add(IndexAPI.class);
+        add(TestGraphAddEdge.class);
+        add(GraphVertexExists.class);
+
 
         // Add feature enabled APIs, these can be enabled by default, some is not.
         // See the OTPFeature enum for details.

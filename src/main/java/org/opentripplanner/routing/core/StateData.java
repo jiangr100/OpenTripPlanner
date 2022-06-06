@@ -66,4 +66,6 @@ public class StateData implements Cloneable {
             throw new IllegalStateException("This is not happening");
         }
     }
+
+    public long getStartTime() { return startTime; }
 }

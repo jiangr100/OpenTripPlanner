@@ -10,13 +10,18 @@ import org.opentripplanner.routing.algorithm.astar.strategies.RemainingWeightHeu
 import org.opentripplanner.routing.algorithm.astar.strategies.TrivialRemainingWeightHeuristic;
 import org.opentripplanner.routing.api.request.RoutingRequest;
 import org.opentripplanner.routing.api.response.RoutingErrorCode;
+import org.opentripplanner.routing.core.State;
 import org.opentripplanner.routing.error.PathNotFoundException;
 import org.opentripplanner.routing.error.RoutingValidationException;
+import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.spt.DominanceFunction;
 import org.opentripplanner.routing.spt.GraphPath;
+import org.opentripplanner.routing.vertextype.SplitterVertex;
 import org.opentripplanner.standalone.server.Router;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Date;
 
 /**
  * This class contains the logic for repeatedly building shortest path trees and accumulating paths through
@@ -105,6 +110,22 @@ public class GraphPathFinder {
         aStar.getShortestPathTree(options, timeout, null);
 
         List<GraphPath> paths = aStar.getPathsToTarget();
+        System.out.println("paths:");
+        System.out.println(paths);
+        for (GraphPath path: paths) {
+            for (State s : path.states) {
+                System.out.println(s.getVertex());
+                System.out.println(s.getBackEdge());
+                if (s.getVertex() instanceof SplitterVertex) {
+                    System.out.println(((SplitterVertex) s.getVertex()).previousNodeId);
+                    System.out.println(((SplitterVertex) s.getVertex()).nextNodeId);
+                }
+                System.out.println("time arrival");
+                Date date = new Date(s.getTimeInMillis());
+                System.out.println(s.getTimeSeconds());
+                System.out.println(date);
+            }
+        }
 
         LOG.debug("we have {} paths", paths.size());
         LOG.debug("END SEARCH ({} msec)", System.currentTimeMillis() - searchBeginTime);

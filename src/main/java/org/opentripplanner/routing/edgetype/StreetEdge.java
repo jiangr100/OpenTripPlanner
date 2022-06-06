@@ -2,10 +2,8 @@ package org.opentripplanner.routing.edgetype;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
+
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.LineString;
 import org.opentripplanner.common.TurnRestriction;
@@ -108,6 +106,8 @@ public class StreetEdge extends Edge implements BikeWalkableEdge, Cloneable, Car
      */
     private float carSpeed;
 
+    private Map<Integer, Float> carSpeedMap;
+
     /**
      * The angle at the start of the edge geometry.
      * Internal representation is -180 to +179 integer degrees mapped to -128 to +127 (brads)
@@ -131,6 +131,7 @@ public class StreetEdge extends Edge implements BikeWalkableEdge, Cloneable, Car
         this.name = name;
         this.setPermission(permission);
         this.setCarSpeed(DEFAULT_CAR_SPEED);
+        this.carSpeedMap = new TreeMap<>();
         this.setWheelchairAccessible(true); // accessible by default
         if (geometry != null) {
             try {
@@ -332,8 +333,10 @@ public class StreetEdge extends Edge implements BikeWalkableEdge, Cloneable, Car
         }
 
         // Automobiles have variable speeds depending on the edge type
-        double speed = calculateSpeed(options, traverseMode, walkingBike);
-        
+        // double speed = calculateSpeed(options, traverseMode, walkingBike);
+        double speed = calculateSpeed(options, traverseMode, walkingBike,
+                s0.getTimeInMillis());
+
         double time;
         double weight;
         // TODO(flamholz): factor out this bike, wheelchair and walking specific logic to somewhere central.
@@ -518,6 +521,10 @@ public class StreetEdge extends Edge implements BikeWalkableEdge, Cloneable, Car
     private double calculateCarSpeed(RoutingRequest options) {
         return getCarSpeed();
     }
+
+    private double calculateCarSpeed(RoutingRequest options, long currentTime) {
+        return getCarSpeed(currentTime);
+    }
     
     /**
      * Calculate the speed appropriately given the RoutingRequest and traverseMode.
@@ -532,6 +539,21 @@ public class StreetEdge extends Edge implements BikeWalkableEdge, Cloneable, Car
         } else if (traverseMode.isDriving()) {
             // NOTE: Automobiles have variable speeds depending on the edge type
             return calculateCarSpeed(options);
+        }
+        return options.getSpeed(traverseMode, walkingBike);
+    }
+
+    public double calculateSpeed(
+            RoutingRequest options,
+            TraverseMode traverseMode,
+            boolean walkingBike,
+            long currentTime
+    ) {
+        if (traverseMode == null) {
+            return Double.NaN;
+        } else if (traverseMode.isDriving()) {
+            // NOTE: Automobiles have variable speeds depending on the edge type
+            return calculateCarSpeed(options, currentTime);
         }
         return options.getSpeed(traverseMode, walkingBike);
     }
@@ -572,7 +594,8 @@ public class StreetEdge extends Edge implements BikeWalkableEdge, Cloneable, Car
     public String toString() {
         return "StreetEdge(" + name + ", " + fromv + " -> " + tov
                 + " length=" + this.getDistanceMeters() + " carSpeed=" + this.getCarSpeed()
-                + " permission=" + this.getPermission() + ")";
+                + " permission=" + this.getPermission() + ")"
+                + "carSpeedMap=" + this.carSpeedMap;
     }
 
     @Override
@@ -734,9 +757,40 @@ public class StreetEdge extends Edge implements BikeWalkableEdge, Cloneable, Car
 		return carSpeed;
 	}
 
+	public float getCarSpeed(long currentTime) {
+	    Date currentDate = new Date(currentTime);
+	    int curHour = currentDate.getHours(), curMin = currentDate.getMinutes();
+	    int totalMins = curHour*60 + curMin;
+	    float target_speed = carSpeed;
+        for (Map.Entry<Integer, Float> pair : carSpeedMap.entrySet()) {
+            if (pair.getKey() > totalMins) break;
+            target_speed = pair.getValue();
+        }
+	    return target_speed;
+    }
+
 	public void setCarSpeed(float carSpeed) {
 		this.carSpeed = carSpeed;
 	}
+
+	public void addCarSpeed(int time, float carSpeed) {
+	    this.carSpeedMap.put(time, carSpeed);
+    }
+
+	/*
+	public void setCarSpeedMap(float carSpeed) {
+	    List<Float> carSpeedList = new ArrayList<>(Collections.nCopies(4, carSpeed));
+	    setCarSpeedMap(carSpeedList);
+    }
+
+	public void setCarSpeedMap(List<Float> l) {
+	    int iter = 0;
+	    for (Float sp : l) {
+            carSpeedMap.put(iter, sp);
+            iter += 1;
+        }
+    }
+	 */
 
 	public boolean isSlopeOverride() {
 	    return BitSetUtils.get(flags, SLOPEOVERRIDE_FLAG_INDEX);
